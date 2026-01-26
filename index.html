@@ -2848,24 +2848,27 @@
 
 
     }
-
+  </script>
 
   <!-- Login Overlay (Hidden by default) -->
-  <div id="login-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; justify-content:center; align-items:center; flex-direction:column;">
-    <div style="background:white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1); max-width: 400px; width: 90%; padding: 40px; text-align: center;">
+  <div id="login-overlay"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; justify-content:center; align-items:center; flex-direction:column;">
+    <div
+      style="background:white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1); max-width: 400px; width: 90%; padding: 40px; text-align: center;">
       <h2 style="color:red; margin-top:0; font-size: 24px;">⛔ Access Restricted</h2>
       <p style="color:#666; margin-bottom: 20px;">You must be logged in to access this system.</p>
-      
+
       <div id="login-form-container">
         <!-- Login Form Injected Here -->
-         <h4 style="margin-bottom:10px;">🔐 Staff Login</h4>
-         <p style="font-size:13px; color:#999; margin-bottom:15px;">Enter registered email address.</p>
-          
-          <div style="display:flex; flex-direction:column; gap:10px;">
-            <input type="email" id="manual-login-email" placeholder="Enter your email" class="form-control" style="width:100%;">
-            <button onclick="handleManualLogin()" class="btn btn-primary" style="width:100%;">Verify & Login</button>
-          </div>
-          <div id="login-feedback" style="margin-top:10px; font-weight:bold; min-height: 20px;"></div>
+        <h4 style="margin-bottom:10px;">🔐 Staff Login</h4>
+        <p style="font-size:13px; color:#999; margin-bottom:15px;">Enter registered email address.</p>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <input type="email" id="manual-login-email" placeholder="Enter your email" class="form-control"
+            style="width:100%;">
+          <button onclick="handleManualLogin()" class="btn btn-primary" style="width:100%;">Verify & Login</button>
+        </div>
+        <div id="login-feedback" style="margin-top:10px; font-weight:bold; min-height: 20px;"></div>
       </div>
     </div>
   </div>
@@ -2892,14 +2895,14 @@
           if (moduleCount > 0) {
             // AUTHORIZED
             console.log('User authorized. Showing App.');
-            if(appContainer) appContainer.style.display = 'flex';
-            if(loginOverlay) loginOverlay.style.display = 'none';
+            if (appContainer) appContainer.style.display = 'flex';
+            if (loginOverlay) loginOverlay.style.display = 'none';
 
             // User Info Display
-             const userDisplay = document.getElementById('user-display');
-             if (userDisplay) {
-               userDisplay.innerHTML = `<span>${access.role} (${moduleCount} modules) | ${access.email}</span>`;
-             }
+            const userDisplay = document.getElementById('user-display');
+            if (userDisplay) {
+              userDisplay.innerHTML = `<span>${access.role} (${moduleCount} modules) | ${access.email}</span>`;
+            }
 
             // Filter UI
             filterMenuByRole(access.modules);
@@ -2909,21 +2912,21 @@
           } else {
             // UNAUTHORIZED
             console.warn('User unauthorized. Showing Login Overlay.');
-            if(appContainer) appContainer.style.display = 'none'; // Hide App
-            if(loginOverlay) loginOverlay.style.display = 'flex'; // Show Login
+            if (appContainer) appContainer.style.display = 'none'; // Hide App
+            if (loginOverlay) loginOverlay.style.display = 'flex'; // Show Login
           }
         })
         .withFailureHandler(function (error) {
           console.error('Error loading user access:', error);
           // Default to locked out on error
-           const appContainer = document.querySelector('.app-container');
-           const loginOverlay = document.getElementById('login-overlay');
-           if(appContainer) appContainer.style.display = 'none';
-           if(loginOverlay) {
-             loginOverlay.style.display = 'flex';
-             document.getElementById('login-feedback').textContent = "Connection Error: " + error.message;
-             document.getElementById('login-feedback').style.color = 'red';
-           }
+          const appContainer = document.querySelector('.app-container');
+          const loginOverlay = document.getElementById('login-overlay');
+          if (appContainer) appContainer.style.display = 'none';
+          if (loginOverlay) {
+            loginOverlay.style.display = 'flex';
+            document.getElementById('login-feedback').textContent = "Connection Error: " + error.message;
+            document.getElementById('login-feedback').style.color = 'red';
+          }
         })
         .getUserAccess(cachedToken);
     };
@@ -3460,13 +3463,13 @@
               '👁️ Review Results' +
               '</button>' +
               '</td>';
-    tbody.appendChild(row);
+            tbody.appendChild(row);
           });
         })
         .withFailureHandler(function (error) {
-      tbody.innerHTML = '<tr><td colspan="6" style="color:red;">Error loading queue: ' + error.message + '</td></tr>';
-    })
-      .getPendingLabResultsQueue();
+          tbody.innerHTML = '<tr><td colspan="6" style="color:red;">Error loading queue: ' + error.message + '</td></tr>';
+        })
+        .getPendingLabResultsQueue();
     }
 
     // Open Lab Review Modal
