@@ -53,11 +53,29 @@ if (typeof google === 'undefined' || typeof google.script === 'undefined') {
             // Google Apps Script Web Apps support CORS if the responding ContentService.createTextOutput() 
             // has the correct mime type.
 
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
             fetch(GAS_BACKEND_URL, {
               method: 'POST',
-              body: JSON.stringify(payload)
+              body: JSON.stringify(payload),
+              signal: controller.signal
             })
-              .then(response => response.json())
+              .then(response => {
+                clearTimeout(timeoutId);
+                // Check if response is OK and likely JSON
+                if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text().then(text => {
+                  try {
+                    return JSON.parse(text);
+                  } catch (e) {
+                    console.error("GitHubAdapter: Received non-JSON response:", text.substring(0, 500));
+                    throw new Error("Invalid server response. Did you set access to 'Anyone'? (Check console)");
+                  }
+                });
+              })
               .then(data => {
                 if (data.status === 'success') {
                   if (this._successHandler) {
@@ -67,11 +85,20 @@ if (typeof google === 'undefined' || typeof google.script === 'undefined') {
                   console.error("GitHubAdapter: Backend returned error:", data.error);
                   if (this._failureHandler) {
                     this._failureHandler(new Error(data.error));
+                  } else {
+                    alert("System Error: " + data.error);
                   }
                 }
               })
               .catch(error => {
+                clearTimeout(timeoutId);
                 console.error("GitHubAdapter: Network request failed:", error);
+
+                // Show visible error to user
+                if (window.confirm("Connection Error: " + error.message + "\n\nClick OK to retry or Cancel to ignore.")) {
+                  // Optional: retry logic could go here
+                }
+
                 if (this._failureHandler) {
                   this._failureHandler(error);
                 }
