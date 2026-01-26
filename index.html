@@ -2904,8 +2904,16 @@
           filterMenuByRole(access.modules);
           filterDashboardButtons(access.modules);
 
-          // Navigate to dashboard
-          navigate('dashboard');
+          // SECURE NAVIGATION: Only go to dashboard if user has permissions
+          const moduleCount = (access.modules || []).length;
+          if (moduleCount > 0) {
+            console.log('User authorized. Navigating to dashboard.');
+            navigate('dashboard');
+          } else {
+            console.warn('User unauthorized. Stay on login screen.');
+            // Ensure no other views are active
+            document.querySelectorAll('.view').forEach(el => el.style.display = 'none');
+          }
         })
         .withFailureHandler(function (error) {
           console.error('Error loading user access:', error);
