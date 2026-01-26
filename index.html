@@ -6883,7 +6883,8 @@
 
 
     // Manual Login Handler
-    function handleManualLogin() {
+    // --- 2-Step Login Logic ---
+    function initiateLogin() {
       const emailInput = document.getElementById('manual-login-email');
       const feedback = document.getElementById('login-feedback');
       const email = emailInput.value.trim();
@@ -6897,7 +6898,49 @@
       }
 
       if (feedback) {
-        feedback.textContent = 'Verifying identity...';
+        feedback.textContent = 'Sending verification code...';
+        feedback.style.color = '#2370b8';
+      }
+
+      // Call Backend to send code
+      google.script.run
+        .withSuccessHandler(function (result) {
+          if (result.success) {
+            // Show Step 2
+            document.getElementById('login-step-1').style.display = 'none';
+            document.getElementById('login-step-2').style.display = 'block';
+            if (feedback) feedback.textContent = '';
+          } else {
+            if (feedback) {
+              feedback.textContent = result.message;
+              feedback.style.color = 'red';
+            }
+          }
+        })
+        .withFailureHandler(function (err) {
+          if (feedback) {
+            feedback.textContent = 'Error: ' + err.message;
+            feedback.style.color = 'red';
+          }
+        })
+        .sendVerificationCode(email);
+    }
+
+    function submitVerification() {
+      const email = document.getElementById('manual-login-email').value.trim();
+      const code = document.getElementById('manual-login-code').value.trim();
+      const feedback = document.getElementById('login-feedback');
+
+      if (!code) {
+        if (feedback) {
+          feedback.textContent = 'Please enter the code.';
+          feedback.style.color = 'red';
+        }
+        return;
+      }
+
+      if (feedback) {
+        feedback.textContent = 'Verifying code...';
         feedback.style.color = '#2370b8';
       }
 
@@ -6914,7 +6957,7 @@
               feedback.style.color = 'green';
             }
 
-            // Reload page to apply permissions with token
+            // Reload page to apply permissions
             setTimeout(function () {
               window.top.location.reload();
             }, 1000);
@@ -6931,7 +6974,13 @@
             feedback.style.color = 'red';
           }
         })
-        .authenticateUser(email);
+        .verifyLoginCode(email, code);
+    }
+
+    function resetLogin() {
+      document.getElementById('login-step-1').style.display = 'block';
+      document.getElementById('login-step-2').style.display = 'none';
+      document.getElementById('login-feedback').textContent = '';
     }
 
   </script>
