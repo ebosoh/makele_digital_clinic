@@ -2850,6 +2850,30 @@
     }
 
 
+  <!-- Login Overlay (Hidden by default) -->
+  <div id="login-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; justify-content:center; align-items:center; flex-direction:column;">
+    <div style="background:white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1); max-width: 400px; width: 90%; padding: 40px; text-align: center;">
+      <h2 style="color:red; margin-top:0; font-size: 24px;">⛔ Access Restricted</h2>
+      <p style="color:#666; margin-bottom: 20px;">You must be logged in to access this system.</p>
+      
+      <div id="login-form-container">
+        <!-- Login Form Injected Here -->
+         <h4 style="margin-bottom:10px;">🔐 Staff Login</h4>
+         <p style="font-size:13px; color:#999; margin-bottom:15px;">Enter registered email address.</p>
+          
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <input type="email" id="manual-login-email" placeholder="Enter your email" class="form-control" style="width:100%;">
+            <button onclick="handleManualLogin()" class="btn btn-primary" style="width:100%;">Verify & Login</button>
+          </div>
+          <div id="login-feedback" style="margin-top:10px; font-weight:bold; min-height: 20px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Navigation & Routing ---
+    // (Existing navigation code...)
+
     // Load user access and filter menu
     window.onload = function () {
       const cachedToken = localStorage.getItem('authToken') || localStorage.getItem('userEmail');
@@ -2858,69 +2882,52 @@
         .withSuccessHandler(function (access) {
           console.log('User access:', access);
 
-          // Display user info
-          const userDisplay = document.getElementById('user-display');
-          if (userDisplay) {
-            const moduleCount = (access.modules || []).length;
-            userDisplay.innerHTML = `<span>${access.role} (${moduleCount} modules) | ${access.email}</span>`;
-
-            if (moduleCount === 0) {
-              console.error('CRITICAL: No modules returned for role:', access.role, 'Email:', access.email);
-              // Target user-info div or fallback to finding a container in main
-              let infoEl = document.getElementById('user-info');
-              if (!infoEl) {
-                // If user-info not found (it might be inside dashboard view), try to inject into dashboard
-                const dashboard = document.getElementById('dashboard');
-                if (dashboard) {
-                  infoEl = document.createElement('div');
-                  infoEl.id = 'user-info';
-                  dashboard.prepend(infoEl);
-                }
-              }
-
-              if (infoEl) infoEl.innerHTML = `<div style="background:#fffafa; border:2px solid red; padding:20px; border-radius:10px; margin:20px 0; max-width: 600px; margin-left: auto; margin-right: auto;">
-                <h3 style="color:red; margin-top:0;">⛔ Access Restricted</h3>
-                <p><strong>System Status:</strong> Role: ${access.role} | Email: ${access.email || 'None Detected'}</p>
-                <p>The system could not automatically detect your permission level. This happens when the app is running in "Execute as Me" mode for external users.</p>
-                
-                <hr style="border:0; border-top:1px solid #ddd; margin:15px 0;">
-                
-                <h4 style="margin-bottom:10px;">🔐 Manual Login (For Authorized Staff)</h4>
-                <p style="font-size:13px; color:#666; margin-bottom:15px;">Please enter your registered email address to verify your identity.</p>
-                
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                  <input type="email" id="manual-login-email" placeholder="Enter your email" class="form-control" style="flex:1; min-width:250px;">
-                  <button onclick="handleManualLogin()" class="btn btn-primary" style="white-space:nowrap;">Verify & Login</button>
-                </div>
-                <div id="login-feedback" style="margin-top:10px; font-weight:bold;"></div>
-              </div>`;
-            }
-          }
-
-          // Store user access globally for permission checks
           window.userAccess = access;
-
-          // Filter menu AND dashboard buttons based on role
-          filterMenuByRole(access.modules);
-          filterDashboardButtons(access.modules);
-
-          // SECURE NAVIGATION: Only go to dashboard if user has permissions
           const moduleCount = (access.modules || []).length;
+
+          // LOGIN LOGIC: Toggle Screens
+          const appContainer = document.querySelector('.app-container');
+          const loginOverlay = document.getElementById('login-overlay');
+
           if (moduleCount > 0) {
-            console.log('User authorized. Navigating to dashboard.');
+            // AUTHORIZED
+            console.log('User authorized. Showing App.');
+            if(appContainer) appContainer.style.display = 'flex';
+            if(loginOverlay) loginOverlay.style.display = 'none';
+
+            // User Info Display
+             const userDisplay = document.getElementById('user-display');
+             if (userDisplay) {
+               userDisplay.innerHTML = `<span>${access.role} (${moduleCount} modules) | ${access.email}</span>`;
+             }
+
+            // Filter UI
+            filterMenuByRole(access.modules);
+            filterDashboardButtons(access.modules);
+
             navigate('dashboard');
           } else {
-            console.warn('User unauthorized. Stay on login screen.');
-            // Ensure no other views are active
-            document.querySelectorAll('.view').forEach(el => el.style.display = 'none');
+            // UNAUTHORIZED
+            console.warn('User unauthorized. Showing Login Overlay.');
+            if(appContainer) appContainer.style.display = 'none'; // Hide App
+            if(loginOverlay) loginOverlay.style.display = 'flex'; // Show Login
           }
         })
         .withFailureHandler(function (error) {
           console.error('Error loading user access:', error);
-          showAlert('Error loading permissions. Please refresh the page.', 'Error', '❌');
+          // Default to locked out on error
+           const appContainer = document.querySelector('.app-container');
+           const loginOverlay = document.getElementById('login-overlay');
+           if(appContainer) appContainer.style.display = 'none';
+           if(loginOverlay) {
+             loginOverlay.style.display = 'flex';
+             document.getElementById('login-feedback').textContent = "Connection Error: " + error.message;
+             document.getElementById('login-feedback').style.color = 'red';
+           }
         })
         .getUserAccess(cachedToken);
     };
+
 
     window.handleManualLogin = function () {
       const emailField = document.getElementById('manual-login-email');
@@ -3453,13 +3460,13 @@
               '👁️ Review Results' +
               '</button>' +
               '</td>';
-            tbody.appendChild(row);
+    tbody.appendChild(row);
           });
         })
         .withFailureHandler(function (error) {
-          tbody.innerHTML = '<tr><td colspan="6" style="color:red;">Error loading queue: ' + error.message + '</td></tr>';
-        })
-        .getPendingLabResultsQueue();
+      tbody.innerHTML = '<tr><td colspan="6" style="color:red;">Error loading queue: ' + error.message + '</td></tr>';
+    })
+      .getPendingLabResultsQueue();
     }
 
     // Open Lab Review Modal
@@ -5321,142 +5328,142 @@
 
 
 
-    <!-- test -->
+    < !--test -->
 
-    function openDispenseForm(clientNumber) {
-      console.log('Opening dispense form for client:', clientNumber);
+      function openDispenseForm(clientNumber) {
+        console.log('Opening dispense form for client:', clientNumber);
 
-      // Switch to FP Tracking tab first
-      showFPTab('tracking');
+        // Switch to FP Tracking tab first
+        showFPTab('tracking');
 
-      setTimeout(function () {
-        const dispenseSection = document.getElementById('fp-dispense-section');
+        setTimeout(function () {
+          const dispenseSection = document.getElementById('fp-dispense-section');
 
-        if (!dispenseSection) {
-          showAlert('Error: Dispense section not found in the page', 'Error', '❌');
-          return;
-        }
+          if (!dispenseSection) {
+            showAlert('Error: Dispense section not found in the page', 'Error', '❌');
+            return;
+          }
 
-        dispenseSection.style.display = 'block';
+          dispenseSection.style.display = 'block';
 
-        // Try to get client from localStorage first
-        let client = null;
-        const storedClients = localStorage.getItem('fpClients');
+          // Try to get client from localStorage first
+          let client = null;
+          const storedClients = localStorage.getItem('fpClients');
 
-        if (storedClients) {
-          const clients = JSON.parse(storedClients);
-          client = clients.find(function (c) { return c.client_number === clientNumber; });
-        }
+          if (storedClients) {
+            const clients = JSON.parse(storedClients);
+            client = clients.find(function (c) { return c.client_number === clientNumber; });
+          }
 
-        // If not in localStorage, get from FP Tracking records
-        if (!client) {
-          const storedTracking = localStorage.getItem('fpTracking');
-          if (storedTracking) {
-            const trackingRecords = JSON.parse(storedTracking);
-            const trackingRecord = trackingRecords.find(function (r) { return r.client_number === clientNumber; });
+          // If not in localStorage, get from FP Tracking records
+          if (!client) {
+            const storedTracking = localStorage.getItem('fpTracking');
+            if (storedTracking) {
+              const trackingRecords = JSON.parse(storedTracking);
+              const trackingRecord = trackingRecords.find(function (r) { return r.client_number === clientNumber; });
 
-            if (trackingRecord) {
-              client = {
-                client_number: trackingRecord.client_number,
-                client_name: trackingRecord.client_name,
-                telephone: trackingRecord.phone_number
-              };
+              if (trackingRecord) {
+                client = {
+                  client_number: trackingRecord.client_number,
+                  client_name: trackingRecord.client_name,
+                  telephone: trackingRecord.phone_number
+                };
+              }
             }
           }
-        }
 
-        // If still not found, try to get from the tracking table rows
-        if (!client) {
-          const trackingRows = document.querySelectorAll('#fp-tracking-table tbody tr');
-          trackingRows.forEach(function (row) {
-            const cells = row.querySelectorAll('td');
-            if (cells.length > 0) {
-              const name = cells[0].innerText;
-              const phone = cells[1].innerText;
+          // If still not found, try to get from the tracking table rows
+          if (!client) {
+            const trackingRows = document.querySelectorAll('#fp-tracking-table tbody tr');
+            trackingRows.forEach(function (row) {
+              const cells = row.querySelectorAll('td');
+              if (cells.length > 0) {
+                const name = cells[0].innerText;
+                const phone = cells[1].innerText;
 
-              // Check if this row's buttons contain the clientNumber
-              const buttons = row.querySelectorAll('button');
-              buttons.forEach(function (btn) {
-                if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(clientNumber)) {
-                  client = {
-                    client_number: clientNumber,
-                    client_name: name,
-                    telephone: phone
-                  };
-                }
-              });
-            }
-          });
-        }
+                // Check if this row's buttons contain the clientNumber
+                const buttons = row.querySelectorAll('button');
+                buttons.forEach(function (btn) {
+                  if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(clientNumber)) {
+                    client = {
+                      client_number: clientNumber,
+                      client_name: name,
+                      telephone: phone
+                    };
+                  }
+                });
+              }
+            });
+          }
 
-        if (!client) {
-          showAlert('Error: Client not found. Client Number: ' + clientNumber, 'Error', '❌');
-          dispenseSection.style.display = 'none';
-          return;
-        }
+          if (!client) {
+            showAlert('Error: Client not found. Client Number: ' + clientNumber, 'Error', '❌');
+            dispenseSection.style.display = 'none';
+            return;
+          }
 
-        // Show the form with client data
-        dispenseSection.innerHTML = '<h3>Record FP Service</h3>' +
-          '<form id="fp-dispense-form" onsubmit="handleDispenseSubmit(event)">' +
-          '<input type="hidden" name="client_number" value="' + client.client_number + '">' +
-          '<div class="alert" style="background: #eef5fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">' +
-          '<strong>Client:</strong> ' + client.client_name + '<br>' +
-          '<strong>Phone:</strong> ' + client.telephone +
-          '</div>' +
-          '<div class="grid-2">' +
-          '<div class="form-group"><label>Name *</label><input type="text" name="client_name" class="form-control" value="' + client.client_name + '" readonly style="background-color: #f0f0f0;"></div>' +
-          '<div class="form-group"><label>Phone Number *</label><input type="text" name="phone_number" class="form-control" value="' + client.telephone + '" readonly style="background-color: #f0f0f0;"></div>' +
-          '</div>' +
-          '<div class="grid-2">' +
-          '<div class="form-group"><label>FP Type *</label>' +
-          '<select name="fp_type" class="form-control" required>' +
-          '<option value="">Select Method...</option>' +
-          '<optgroup label="Oral Contraceptives">' +
-          '<option value="COC">Combined Oral Contraceptives (COC)</option>' +
-          '<option value="POP">Progestin Only Pills (POP)</option>' +
-          '</optgroup>' +
-          '<optgroup label="Injectables">' +
-          '<option value="DMPA-IM">DMPA-IM (Depo)</option>' +
-          '<option value="DMPA-SC">DMPA-SC</option>' +
-          '</optgroup>' +
-          '<optgroup label="Implants">' +
-          '<option value="Implanon">Implants (1-rod)</option>' +
-          '<option value="Jadelle">Implants (2-rod)</option>' +
-          '</optgroup>' +
-          '<optgroup label="IUCD">' +
-          '<option value="Copper T">IUCD (Copper T)</option>' +
-          '<option value="Hormonal IUCD">IUCD (Hormonal)</option>' +
-          '</optgroup>' +
-          '<optgroup label="Barrier">' +
-          '<option value="Male Condoms">Male Condoms</option>' +
-          '<option value="Female Condoms">Female Condoms</option>' +
-          '</optgroup>' +
-          '<optgroup label="Permanent">' +
-          '<option value="Tubal Ligation">Tubal Ligation</option>' +
-          '<option value="Vasectomy">Vasectomy</option>' +
-          '</optgroup>' +
-          '<optgroup label="Natural/Other">' +
-          '<option value="Cycle Beads">Cycle Beads</option>' +
-          '<option value="Emergency Pills">Emergency Pills</option>' +
-          '</optgroup>' +
-          '</select>' +
-          '</div>' +
-          '<div class="form-group"><label>Dispense Date *</label><input type="date" name="dispense_date" class="form-control" required></div>' +
-          '</div>' +
-          '<div class="grid-2">' +
-          '<div class="form-group"><label>Dosage</label><input type="text" name="dosage" class="form-control" placeholder="e.g., 1 tablet daily"></div>' +
-          '<div class="form-group"><label>Duration (days) *</label><input type="number" name="duration_days" class="form-control" min="1" required></div>' +
-          '</div>' +
-          '<div class="form-group"><label>Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>' +
-          '<div class="form-group">' +
-          '<button type="submit" class="btn btn-primary">Save Dispense</button>' +
-          '<button type="button" onclick="cancelDispense()" class="btn" style="background:#eee; margin-left:0.5rem;">Cancel</button>' +
-          '</div>' +
-          '</form>';
+          // Show the form with client data
+          dispenseSection.innerHTML = '<h3>Record FP Service</h3>' +
+            '<form id="fp-dispense-form" onsubmit="handleDispenseSubmit(event)">' +
+            '<input type="hidden" name="client_number" value="' + client.client_number + '">' +
+            '<div class="alert" style="background: #eef5fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">' +
+            '<strong>Client:</strong> ' + client.client_name + '<br>' +
+            '<strong>Phone:</strong> ' + client.telephone +
+            '</div>' +
+            '<div class="grid-2">' +
+            '<div class="form-group"><label>Name *</label><input type="text" name="client_name" class="form-control" value="' + client.client_name + '" readonly style="background-color: #f0f0f0;"></div>' +
+            '<div class="form-group"><label>Phone Number *</label><input type="text" name="phone_number" class="form-control" value="' + client.telephone + '" readonly style="background-color: #f0f0f0;"></div>' +
+            '</div>' +
+            '<div class="grid-2">' +
+            '<div class="form-group"><label>FP Type *</label>' +
+            '<select name="fp_type" class="form-control" required>' +
+            '<option value="">Select Method...</option>' +
+            '<optgroup label="Oral Contraceptives">' +
+            '<option value="COC">Combined Oral Contraceptives (COC)</option>' +
+            '<option value="POP">Progestin Only Pills (POP)</option>' +
+            '</optgroup>' +
+            '<optgroup label="Injectables">' +
+            '<option value="DMPA-IM">DMPA-IM (Depo)</option>' +
+            '<option value="DMPA-SC">DMPA-SC</option>' +
+            '</optgroup>' +
+            '<optgroup label="Implants">' +
+            '<option value="Implanon">Implants (1-rod)</option>' +
+            '<option value="Jadelle">Implants (2-rod)</option>' +
+            '</optgroup>' +
+            '<optgroup label="IUCD">' +
+            '<option value="Copper T">IUCD (Copper T)</option>' +
+            '<option value="Hormonal IUCD">IUCD (Hormonal)</option>' +
+            '</optgroup>' +
+            '<optgroup label="Barrier">' +
+            '<option value="Male Condoms">Male Condoms</option>' +
+            '<option value="Female Condoms">Female Condoms</option>' +
+            '</optgroup>' +
+            '<optgroup label="Permanent">' +
+            '<option value="Tubal Ligation">Tubal Ligation</option>' +
+            '<option value="Vasectomy">Vasectomy</option>' +
+            '</optgroup>' +
+            '<optgroup label="Natural/Other">' +
+            '<option value="Cycle Beads">Cycle Beads</option>' +
+            '<option value="Emergency Pills">Emergency Pills</option>' +
+            '</optgroup>' +
+            '</select>' +
+            '</div>' +
+            '<div class="form-group"><label>Dispense Date *</label><input type="date" name="dispense_date" class="form-control" required></div>' +
+            '</div>' +
+            '<div class="grid-2">' +
+            '<div class="form-group"><label>Dosage</label><input type="text" name="dosage" class="form-control" placeholder="e.g., 1 tablet daily"></div>' +
+            '<div class="form-group"><label>Duration (days) *</label><input type="number" name="duration_days" class="form-control" min="1" required></div>' +
+            '</div>' +
+            '<div class="form-group"><label>Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>' +
+            '<div class="form-group">' +
+            '<button type="submit" class="btn btn-primary">Save Dispense</button>' +
+            '<button type="button" onclick="cancelDispense()" class="btn" style="background:#eee; margin-left:0.5rem;">Cancel</button>' +
+            '</div>' +
+            '</form>';
 
-        dispenseSection.scrollIntoView({ behavior: 'smooth' });
-      }, 300);
-    }
+          dispenseSection.scrollIntoView({ behavior: 'smooth' });
+        }, 300);
+      }
 
 
     function openDispenseFormWithData(clientNumber, clientName, phoneNumber) {
