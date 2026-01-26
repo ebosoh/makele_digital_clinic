@@ -5328,142 +5328,142 @@
 
 
 
-    < !--test -->
+    // test
 
-      function openDispenseForm(clientNumber) {
-        console.log('Opening dispense form for client:', clientNumber);
+    function openDispenseForm(clientNumber) {
+      console.log('Opening dispense form for client:', clientNumber);
 
-        // Switch to FP Tracking tab first
-        showFPTab('tracking');
+      // Switch to FP Tracking tab first
+      showFPTab('tracking');
 
-        setTimeout(function () {
-          const dispenseSection = document.getElementById('fp-dispense-section');
+      setTimeout(function () {
+        const dispenseSection = document.getElementById('fp-dispense-section');
 
-          if (!dispenseSection) {
-            showAlert('Error: Dispense section not found in the page', 'Error', '❌');
-            return;
-          }
+        if (!dispenseSection) {
+          showAlert('Error: Dispense section not found in the page', 'Error', '❌');
+          return;
+        }
 
-          dispenseSection.style.display = 'block';
+        dispenseSection.style.display = 'block';
 
-          // Try to get client from localStorage first
-          let client = null;
-          const storedClients = localStorage.getItem('fpClients');
+        // Try to get client from localStorage first
+        let client = null;
+        const storedClients = localStorage.getItem('fpClients');
 
-          if (storedClients) {
-            const clients = JSON.parse(storedClients);
-            client = clients.find(function (c) { return c.client_number === clientNumber; });
-          }
+        if (storedClients) {
+          const clients = JSON.parse(storedClients);
+          client = clients.find(function (c) { return c.client_number === clientNumber; });
+        }
 
-          // If not in localStorage, get from FP Tracking records
-          if (!client) {
-            const storedTracking = localStorage.getItem('fpTracking');
-            if (storedTracking) {
-              const trackingRecords = JSON.parse(storedTracking);
-              const trackingRecord = trackingRecords.find(function (r) { return r.client_number === clientNumber; });
+        // If not in localStorage, get from FP Tracking records
+        if (!client) {
+          const storedTracking = localStorage.getItem('fpTracking');
+          if (storedTracking) {
+            const trackingRecords = JSON.parse(storedTracking);
+            const trackingRecord = trackingRecords.find(function (r) { return r.client_number === clientNumber; });
 
-              if (trackingRecord) {
-                client = {
-                  client_number: trackingRecord.client_number,
-                  client_name: trackingRecord.client_name,
-                  telephone: trackingRecord.phone_number
-                };
-              }
+            if (trackingRecord) {
+              client = {
+                client_number: trackingRecord.client_number,
+                client_name: trackingRecord.client_name,
+                telephone: trackingRecord.phone_number
+              };
             }
           }
+        }
 
-          // If still not found, try to get from the tracking table rows
-          if (!client) {
-            const trackingRows = document.querySelectorAll('#fp-tracking-table tbody tr');
-            trackingRows.forEach(function (row) {
-              const cells = row.querySelectorAll('td');
-              if (cells.length > 0) {
-                const name = cells[0].innerText;
-                const phone = cells[1].innerText;
+        // If still not found, try to get from the tracking table rows
+        if (!client) {
+          const trackingRows = document.querySelectorAll('#fp-tracking-table tbody tr');
+          trackingRows.forEach(function (row) {
+            const cells = row.querySelectorAll('td');
+            if (cells.length > 0) {
+              const name = cells[0].innerText;
+              const phone = cells[1].innerText;
 
-                // Check if this row's buttons contain the clientNumber
-                const buttons = row.querySelectorAll('button');
-                buttons.forEach(function (btn) {
-                  if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(clientNumber)) {
-                    client = {
-                      client_number: clientNumber,
-                      client_name: name,
-                      telephone: phone
-                    };
-                  }
-                });
-              }
-            });
-          }
+              // Check if this row's buttons contain the clientNumber
+              const buttons = row.querySelectorAll('button');
+              buttons.forEach(function (btn) {
+                if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(clientNumber)) {
+                  client = {
+                    client_number: clientNumber,
+                    client_name: name,
+                    telephone: phone
+                  };
+                }
+              });
+            }
+          });
+        }
 
-          if (!client) {
-            showAlert('Error: Client not found. Client Number: ' + clientNumber, 'Error', '❌');
-            dispenseSection.style.display = 'none';
-            return;
-          }
+        if (!client) {
+          showAlert('Error: Client not found. Client Number: ' + clientNumber, 'Error', '❌');
+          dispenseSection.style.display = 'none';
+          return;
+        }
 
-          // Show the form with client data
-          dispenseSection.innerHTML = '<h3>Record FP Service</h3>' +
-            '<form id="fp-dispense-form" onsubmit="handleDispenseSubmit(event)">' +
-            '<input type="hidden" name="client_number" value="' + client.client_number + '">' +
-            '<div class="alert" style="background: #eef5fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">' +
-            '<strong>Client:</strong> ' + client.client_name + '<br>' +
-            '<strong>Phone:</strong> ' + client.telephone +
-            '</div>' +
-            '<div class="grid-2">' +
-            '<div class="form-group"><label>Name *</label><input type="text" name="client_name" class="form-control" value="' + client.client_name + '" readonly style="background-color: #f0f0f0;"></div>' +
-            '<div class="form-group"><label>Phone Number *</label><input type="text" name="phone_number" class="form-control" value="' + client.telephone + '" readonly style="background-color: #f0f0f0;"></div>' +
-            '</div>' +
-            '<div class="grid-2">' +
-            '<div class="form-group"><label>FP Type *</label>' +
-            '<select name="fp_type" class="form-control" required>' +
-            '<option value="">Select Method...</option>' +
-            '<optgroup label="Oral Contraceptives">' +
-            '<option value="COC">Combined Oral Contraceptives (COC)</option>' +
-            '<option value="POP">Progestin Only Pills (POP)</option>' +
-            '</optgroup>' +
-            '<optgroup label="Injectables">' +
-            '<option value="DMPA-IM">DMPA-IM (Depo)</option>' +
-            '<option value="DMPA-SC">DMPA-SC</option>' +
-            '</optgroup>' +
-            '<optgroup label="Implants">' +
-            '<option value="Implanon">Implants (1-rod)</option>' +
-            '<option value="Jadelle">Implants (2-rod)</option>' +
-            '</optgroup>' +
-            '<optgroup label="IUCD">' +
-            '<option value="Copper T">IUCD (Copper T)</option>' +
-            '<option value="Hormonal IUCD">IUCD (Hormonal)</option>' +
-            '</optgroup>' +
-            '<optgroup label="Barrier">' +
-            '<option value="Male Condoms">Male Condoms</option>' +
-            '<option value="Female Condoms">Female Condoms</option>' +
-            '</optgroup>' +
-            '<optgroup label="Permanent">' +
-            '<option value="Tubal Ligation">Tubal Ligation</option>' +
-            '<option value="Vasectomy">Vasectomy</option>' +
-            '</optgroup>' +
-            '<optgroup label="Natural/Other">' +
-            '<option value="Cycle Beads">Cycle Beads</option>' +
-            '<option value="Emergency Pills">Emergency Pills</option>' +
-            '</optgroup>' +
-            '</select>' +
-            '</div>' +
-            '<div class="form-group"><label>Dispense Date *</label><input type="date" name="dispense_date" class="form-control" required></div>' +
-            '</div>' +
-            '<div class="grid-2">' +
-            '<div class="form-group"><label>Dosage</label><input type="text" name="dosage" class="form-control" placeholder="e.g., 1 tablet daily"></div>' +
-            '<div class="form-group"><label>Duration (days) *</label><input type="number" name="duration_days" class="form-control" min="1" required></div>' +
-            '</div>' +
-            '<div class="form-group"><label>Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>' +
-            '<div class="form-group">' +
-            '<button type="submit" class="btn btn-primary">Save Dispense</button>' +
-            '<button type="button" onclick="cancelDispense()" class="btn" style="background:#eee; margin-left:0.5rem;">Cancel</button>' +
-            '</div>' +
-            '</form>';
+        // Show the form with client data
+        dispenseSection.innerHTML = '<h3>Record FP Service</h3>' +
+          '<form id="fp-dispense-form" onsubmit="handleDispenseSubmit(event)">' +
+          '<input type="hidden" name="client_number" value="' + client.client_number + '">' +
+          '<div class="alert" style="background: #eef5fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">' +
+          '<strong>Client:</strong> ' + client.client_name + '<br>' +
+          '<strong>Phone:</strong> ' + client.telephone +
+          '</div>' +
+          '<div class="grid-2">' +
+          '<div class="form-group"><label>Name *</label><input type="text" name="client_name" class="form-control" value="' + client.client_name + '" readonly style="background-color: #f0f0f0;"></div>' +
+          '<div class="form-group"><label>Phone Number *</label><input type="text" name="phone_number" class="form-control" value="' + client.telephone + '" readonly style="background-color: #f0f0f0;"></div>' +
+          '</div>' +
+          '<div class="grid-2">' +
+          '<div class="form-group"><label>FP Type *</label>' +
+          '<select name="fp_type" class="form-control" required>' +
+          '<option value="">Select Method...</option>' +
+          '<optgroup label="Oral Contraceptives">' +
+          '<option value="COC">Combined Oral Contraceptives (COC)</option>' +
+          '<option value="POP">Progestin Only Pills (POP)</option>' +
+          '</optgroup>' +
+          '<optgroup label="Injectables">' +
+          '<option value="DMPA-IM">DMPA-IM (Depo)</option>' +
+          '<option value="DMPA-SC">DMPA-SC</option>' +
+          '</optgroup>' +
+          '<optgroup label="Implants">' +
+          '<option value="Implanon">Implants (1-rod)</option>' +
+          '<option value="Jadelle">Implants (2-rod)</option>' +
+          '</optgroup>' +
+          '<optgroup label="IUCD">' +
+          '<option value="Copper T">IUCD (Copper T)</option>' +
+          '<option value="Hormonal IUCD">IUCD (Hormonal)</option>' +
+          '</optgroup>' +
+          '<optgroup label="Barrier">' +
+          '<option value="Male Condoms">Male Condoms</option>' +
+          '<option value="Female Condoms">Female Condoms</option>' +
+          '</optgroup>' +
+          '<optgroup label="Permanent">' +
+          '<option value="Tubal Ligation">Tubal Ligation</option>' +
+          '<option value="Vasectomy">Vasectomy</option>' +
+          '</optgroup>' +
+          '<optgroup label="Natural/Other">' +
+          '<option value="Cycle Beads">Cycle Beads</option>' +
+          '<option value="Emergency Pills">Emergency Pills</option>' +
+          '</optgroup>' +
+          '</select>' +
+          '</div>' +
+          '<div class="form-group"><label>Dispense Date *</label><input type="date" name="dispense_date" class="form-control" required></div>' +
+          '</div>' +
+          '<div class="grid-2">' +
+          '<div class="form-group"><label>Dosage</label><input type="text" name="dosage" class="form-control" placeholder="e.g., 1 tablet daily"></div>' +
+          '<div class="form-group"><label>Duration (days) *</label><input type="number" name="duration_days" class="form-control" min="1" required></div>' +
+          '</div>' +
+          '<div class="form-group"><label>Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>' +
+          '<div class="form-group">' +
+          '<button type="submit" class="btn btn-primary">Save Dispense</button>' +
+          '<button type="button" onclick="cancelDispense()" class="btn" style="background:#eee; margin-left:0.5rem;">Cancel</button>' +
+          '</div>' +
+          '</form>';
 
-          dispenseSection.scrollIntoView({ behavior: 'smooth' });
-        }, 300);
-      }
+        dispenseSection.scrollIntoView({ behavior: 'smooth' });
+      }, 300);
+    }
 
 
     function openDispenseFormWithData(clientNumber, clientName, phoneNumber) {
@@ -6821,11 +6821,40 @@
       return date.toLocaleDateString();
     }
 
+    // Default navigation logic if missing
+    if (typeof window.navigate !== 'function') {
+      window.navigate = function (viewId) {
+        document.querySelectorAll('.view').forEach(el => {
+          el.style.display = 'none';
+          el.classList.remove('active');
+        });
+        const target = document.getElementById(viewId);
+        if (target) {
+          target.style.display = 'block';
+          target.classList.add('active');
+          // Close sidebar on mobile if open
+          const sidebar = document.querySelector('.sidebar');
+          const overlay = document.getElementById('sidebar-overlay');
+          if (sidebar && sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+            if (overlay) overlay.style.display = 'none';
+          }
+        }
+      };
+    }
+
     // Initialize Lab Inventory when navigating to it
     document.addEventListener('DOMContentLoaded', function () {
       const originalNavigate = window.navigate;
       window.navigate = function (viewId) {
-        originalNavigate(viewId);
+        if (originalNavigate && typeof originalNavigate === 'function') {
+          originalNavigate(viewId);
+        } else {
+          // Fallback
+          document.querySelectorAll('.view').forEach(el => { el.style.display = 'none'; el.classList.remove('active'); });
+          const t = document.getElementById(viewId);
+          if (t) { t.style.display = 'block'; t.classList.add('active'); }
+        }
 
         if (viewId === 'lab-inventory') {
           // Load default tab (Purchase)
@@ -6860,7 +6889,8 @@
           console.log('Login result:', result);
           if (result.success) {
             // Store token efficiently
-            localStorage.setItem('user_auth_token', result.token);
+            localStorage.setItem('authToken', result.token);
+            localStorage.setItem('userEmail', email);
 
             if (feedback) {
               feedback.textContent = '✓ Verified! Reloading...';
