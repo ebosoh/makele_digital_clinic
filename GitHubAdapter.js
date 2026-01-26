@@ -6,7 +6,7 @@
  */
 
 // CONFIGURATION: REPLACE THIS WITH YOUR DEPLOYED GOOGLE WEB APP URL
-const GAS_BACKEND_URL = 'https://script.google.com/macros/u/1/s/AKfycbyMX1q7M14WhXsskbElNNJqVwIlyMJ1aZOfZx5WL8GwqdUz5sblYrEzOiOeUhk0yBYuCA/exec';
+const GAS_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyMX1q7M14WhXsskbElNNJqVwIlyMJ1aZOfZx5WL8GwqdUz5sblYrEzOiOeUhk0yBYuCA/exec';
 
 // Only activate if we are NOT in Google Apps Script environment
 if (typeof google === 'undefined' || typeof google.script === 'undefined') {
