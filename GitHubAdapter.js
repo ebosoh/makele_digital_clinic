@@ -16,6 +16,11 @@ if (typeof google === 'undefined' || typeof google.script === 'undefined') {
     script: {
       run: new Proxy({}, {
         get: function (target, prop) {
+          // FIX: If the property exists on the target (e.g. _successHandler), return it directly
+          if (prop in target) {
+            return target[prop];
+          }
+
           if (prop === 'withSuccessHandler') {
             return function (successCallback) {
               this._successHandler = successCallback;
@@ -49,10 +54,6 @@ if (typeof google === 'undefined' || typeof google.script === 'undefined') {
             };
 
             // Use fetch to call the Google Apps Script Web App
-            // We use 'no-cors' mode initially to test, but ideally we need CORS support.
-            // Google Apps Script Web Apps support CORS if the responding ContentService.createTextOutput() 
-            // has the correct mime type.
-
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
@@ -84,15 +85,17 @@ if (typeof google === 'undefined' || typeof google.script === 'undefined') {
               })
               .then(data => {
                 if (data.status === 'success') {
-                  if (this._successHandler) {
+                  // FIX: Trigger success handler if it exists
+                  if (this._successHandler && typeof this._successHandler === 'function') {
                     this._successHandler(data.result);
                   }
                 } else {
                   console.error("GitHubAdapter: Backend returned error:", data.error);
-                  if (this._failureHandler) {
+                  if (this._failureHandler && typeof this._failureHandler === 'function') {
                     this._failureHandler(new Error(data.error));
                   } else {
-                    alert("System Error: " + data.error);
+                    // Fallback to alert if no handler
+                    console.error("System Error (No failure handler): " + data.error);
                   }
                 }
               })
@@ -100,13 +103,12 @@ if (typeof google === 'undefined' || typeof google.script === 'undefined') {
                 clearTimeout(timeoutId);
                 console.error("GitHubAdapter: Network request failed:", error);
 
-                // Show visible error to user
-                if (window.confirm("Connection Error: " + error.message + "\n\nClick OK to retry or Cancel to ignore.")) {
-                  // Optional: retry logic could go here
-                }
-
-                if (this._failureHandler) {
+                // Show visible error to user if strictly necessary, but prefer failure handler
+                if (this._failureHandler && typeof this._failureHandler === 'function') {
                   this._failureHandler(error);
+                } else {
+                  // Only alert if no handler is defined, to avoid spam
+                  console.error("Unhandled network error:", error);
                 }
               });
           };
