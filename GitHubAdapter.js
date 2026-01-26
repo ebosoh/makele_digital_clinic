@@ -58,6 +58,12 @@ if (typeof google === 'undefined' || typeof google.script === 'undefined') {
 
             fetch(GAS_BACKEND_URL, {
               method: 'POST',
+              mode: 'cors', // Explicitly state we expect CORS
+              credentials: 'omit', // Don't send cookies
+              redirect: 'follow', // Follow redirects (GAS redirects to content)
+              headers: {
+                "Content-Type": "text/plain;charset=utf-8", // FORCE simple request to avoid Preflight (OPTIONS)
+              },
               body: JSON.stringify(payload),
               signal: controller.signal
             })
