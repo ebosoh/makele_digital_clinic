@@ -55,7 +55,7 @@ if (typeof google === 'undefined' || typeof google.script === 'undefined') {
 
             // Use fetch to call the Google Apps Script Web App
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
 
             fetch(GAS_BACKEND_URL, {
               method: 'POST',
