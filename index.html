@@ -3663,6 +3663,7 @@
     // ICD-11 AUTOCOMPLETE LOGIC
     // ========================================
     // Load ICD-11 codes when diagnosis module opens
+    // Load ICD-11 codes when diagnosis module opens
     function loadICD11Codes() {
       if (window.icd11Codes && window.icd11Codes.length > 0) {
         console.log('ICD-11 codes already loaded:', window.icd11Codes.length);
@@ -3678,34 +3679,35 @@
         .withSuccessHandler(function (codes) {
           console.log('ICD-11 codes loaded:', codes.length);
           window.icd11Codes = codes;
-
-          // Attach search event listeners to all diagnosis search inputs
-          ['diagnosis-search', 'final-diagnosis-search'].forEach(id => {
-            const searchInput = document.getElementById(id);
-            if (searchInput) {
-              searchInput.addEventListener('input', function (e) {
-                const query = e.target.value.trim();
-                const context = id === 'final-diagnosis-search' ? 'final' : 'initial';
-                if (query.length >= 2) {
-                  searchDiagnosis(query, context);
-                } else {
-                  const resultsId = context === 'final' ? 'final-diagnosis-results' : 'diagnosis-results';
-                  document.getElementById(resultsId).style.display = 'none';
-                }
-              });
-            }
-          });
-
-          // Close dropdowns when clicking outside
-          document.addEventListener('click', function (e) {
-            if (!e.target.closest('.autocomplete-wrapper')) {
-              const resultsElems = document.querySelectorAll('.autocomplete-results');
-              resultsElems.forEach(el => el.style.display = 'none');
-            }
-          });
         })
         .getICD11Codes();
     }
+
+    // EVENT DELEGATION FOR ICD-11 SEARCH
+    // This runs once and handles all future events, ignoring view switches
+    document.addEventListener('input', function (e) {
+      if (e.target && (e.target.id === 'diagnosis-search' || e.target.id === 'final-diagnosis-search')) {
+        const query = e.target.value.trim();
+        const context = e.target.id === 'final-diagnosis-search' ? 'final' : 'initial';
+        console.log('Diagnosis search input:', query, context);
+
+        if (query.length >= 2) {
+          searchDiagnosis(query, context);
+        } else {
+          const resultsId = context === 'final' ? 'final-diagnosis-results' : 'diagnosis-results';
+          const el = document.getElementById(resultsId);
+          if (el) el.style.display = 'none';
+        }
+      }
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.autocomplete-wrapper')) {
+        const resultsElems = document.querySelectorAll('.autocomplete-results');
+        resultsElems.forEach(el => el.style.display = 'none');
+      }
+    });
     // Search diagnosis codes
     function searchDiagnosis(query, context = 'initial') {
       if (!window.icd11Codes || window.icd11Codes.length === 0) {
