@@ -7288,6 +7288,21 @@
       document.getElementById('login-feedback').textContent = '';
     }
 
+    // INITIALIZATION
+    window.addEventListener('load', function () {
+      console.log('App loaded. Initializing modules...');
+      loadICD11Codes(); // Load diagnosis codes immediately
+
+      // Attempt to restore session or show login
+      const user = localStorage.getItem('userEmail');
+      if (user) {
+        document.getElementById('user-display').textContent = user;
+        showView('dashboard');
+      } else {
+        // showView('login') - handled by default visibility
+      }
+    });
+
   </script>
 
 </body>
