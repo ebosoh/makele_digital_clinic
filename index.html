@@ -2820,6 +2820,12 @@
       } else if (viewId === 'triage') {
         loadTriageQueue();
       } else if (viewId === 'diagnosis') {
+        // These functions are now handled by 'treatment' view
+        // loadWaitingList();
+        // loadPendingLabResults(); // Load pending lab results queue
+        // loadICD11Codes(); // Add this line
+      } else if (viewId === 'treatment') { // Added 'treatment' view
+        loadPendingLabResults();
         loadWaitingList();
         loadPendingLabResults(); // Load pending lab results queue
         loadICD11Codes(); // Add this line
